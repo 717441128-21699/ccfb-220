@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}仿真单一窗口{% endblock %}</title>
+<style>
+  :root{--blue:#1f5fa8;--bg:#f4f6fa;--line:#d7deea;--ok:#1a7f4b;--err:#c0392b;--warn:#b9770e}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.6 "Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);color:#223}
+  header{background:linear-gradient(120deg,#16477f,#1f5fa8);color:#fff;padding:14px 26px;display:flex;align-items:center;gap:18px}
+  header .logo{font-size:18px;font-weight:700;letter-spacing:1px}
+  header .badge{font-size:12px;background:#e67e22;padding:2px 8px;border-radius:10px}
+  nav{display:flex;gap:4px;margin-left:auto}
+  nav a{color:#dbe8f8;text-decoration:none;padding:6px 12px;border-radius:6px}
+  nav a:hover{background:rgba(255,255,255,.15);color:#fff}
+  main{max-width:1180px;margin:22px auto;padding:0 18px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(20,50,90,.06)}
+  h2{margin:0 0 16px;font-size:17px;color:#16477f;border-left:4px solid var(--blue);padding-left:10px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left}
+  th{background:#eef3fb;color:#274a75;font-weight:600}
+  input,select{padding:7px 9px;border:1px solid #b9c4d6;border-radius:6px;font-size:13px;width:100%}
+  label{display:block;font-size:12px;color:#5a6b85;margin-bottom:3px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px}
+  .grid2{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 14px}
+  .btn{display:inline-block;background:var(--blue);color:#fff;border:0;border-radius:7px;padding:9px 20px;font-size:14px;cursor:pointer;text-decoration:none}
+  .btn.gray{background:#7d8ca3}.btn.green{background:var(--ok)}.btn.orange{background:#e67e22}
+  .flash{background:#fdecea;border:1px solid #f5c6c0;color:var(--err);padding:10px 14px;border-radius:8px;margin-bottom:14px}
+  .pager{display:flex;align-items:center;gap:10px;margin:14px 0}
+  .muted{color:#8493a8;font-size:12px}
+  .tag{display:inline-block;padding:1px 9px;border-radius:10px;font-size:12px}
+  .tag.err{background:#fdecea;color:var(--err)}.tag.ok{background:#e6f6ee;color:var(--ok)}
+  /* 公告弹窗 */
+  .modal-mask{position:fixed;inset:0;background:rgba(15,30,55,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-mask.show{display:flex}
+  .modal{background:#fff;border-radius:12px;width:480px;max-width:92vw;overflow:hidden}
+  .modal .mh{background:#b9770e;color:#fff;padding:12px 18px;font-weight:700;display:flex;gap:8px;align-items:center}
+  .modal .mb{padding:20px 22px;white-space:pre-wrap}
+  .modal .mf{padding:12px 22px;text-align:right;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">仿真·国际贸易单一窗口</span>
+  <span class="badge">LOCAL 模拟环境</span>
+  {% if account %}
+  <nav>
+    <a href="{{ url_for('home') }}">工作台</a>
+    <a href="{{ url_for('decl_new') }}">新建申报</a>
+    <a href="{{ url_for('decl_list') }}">已申报查询</a>
+    <a href="{{ url_for('logout') }}">退出（{{ account }}）</a>
+  </nav>
+  {% endif %}
+</header>
+<main>
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block body %}{% endblock %}
+</main>
+{% if account %}
+<div class="modal-mask" id="annMask">
+  <div class="modal">
+    <div class="mh">📢 <span id="annTitle">系统维护公告</span></div>
+    <div class="mb" id="annBody"></div>
+    <div class="mf"><button class="btn" onclick="document.getElementById('annMask').classList.remove('show')">我知道了</button></div>
+  </div>
+</div>
+<script>
+let annShown = false;
+async function pollAnn(){
+  try{
+    const r = await fetch("{{ url_for('api_announcement') }}");
+    if(!r.ok) return;
+    const a = await r.json();
+    if(a.active && !annShown){
+      annShown = true;
+      document.getElementById('annTitle').textContent = a.title;
+      document.getElementById('annBody').textContent = a.body;
+      document.getElementById('annMask').classList.add('show');
+    }
+  }catch(e){}
+}
+pollAnn(); setInterval(pollAnn, 15000);
+</script>
+{% endif %}
+</body>
+</html>

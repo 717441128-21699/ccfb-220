@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}RPA 管理后台{% endblock %}</title>
+<style>
+  :root{--blue:#2456a6;--bg:#eef1f6;--line:#d5dce8;--ok:#1a7f4b;--err:#c0392b;--warn:#b9770e;--info:#2e6fb7}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.6 "Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);color:#1f2a3d}
+  .layout{display:flex;min-height:100vh}
+  aside{width:210px;background:#16263f;color:#c8d4e6;padding:0;flex:none}
+  aside .brand{padding:20px 18px;font-size:16px;font-weight:700;color:#fff;border-bottom:1px solid #263c60}
+  aside a{display:block;padding:13px 20px;color:#c8d4e6;text-decoration:none;border-left:3px solid transparent}
+  aside a:hover{background:#1d3356;color:#fff}
+  aside a.on{background:#1d3356;color:#fff;border-left-color:#5b9bd5}
+  main{flex:1;padding:24px 28px;min-width:0}
+  h1{font-size:19px;margin:0 0 18px;color:#16263f}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:18px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#eef3fb;color:#274a75}
+  .btn{display:inline-block;border:0;border-radius:7px;padding:7px 14px;font-size:13px;cursor:pointer;text-decoration:none;background:var(--blue);color:#fff}
+  .btn.gray{background:#7d8ca3}.btn.green{background:var(--ok)}.btn.orange{background:var(--warn)}.btn.red{background:var(--err)}
+  .btn.sm{padding:4px 10px;font-size:12px}
+  .tag{display:inline-block;padding:2px 10px;border-radius:11px;font-size:12px;white-space:nowrap}
+  .tag.queued{background:#e8f0fe;color:var(--info)}.tag.running{background:#fff4e0;color:var(--warn)}
+  .tag.verified,.tag.done{background:#e6f6ee;color:var(--ok)}.tag.invalid,.tag.failed,.tag.mismatch{background:#fdecea;color:var(--err)}
+  .tag.imported{background:#f0f0f3;color:#555}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 18px;min-width:110px}
+  .stat b{font-size:22px;display:block}.stat span{font-size:12px;color:#7a879c}
+  input,select,textarea{padding:8px 10px;border:1px solid #b9c4d6;border-radius:7px;font-size:13px;width:100%;font-family:inherit}
+  label{display:block;font-size:12px;color:#5a6b85;margin:10px 0 4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+  .muted{color:#8493a8;font-size:12px}
+  .errbox{background:#fdecea;border:1px solid #f3c2bb;border-radius:8px;padding:10px 14px}
+  .okbox{background:#e6f6ee;border:1px solid #bfe3d1;border-radius:8px;padding:10px 14px}
+  .shot{width:230px;border:1px solid var(--line);border-radius:6px;cursor:zoom-in}
+  pre{background:#16263f;color:#d7e3f4;padding:12px;border-radius:8px;font-size:12px;overflow:auto;max-height:340px}
+  .logline{font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+  .dot.g{background:var(--ok)}.dot.r{background:var(--err)}.dot.y{background:var(--warn)}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">报关 RPA 管理后台</div>
+    {% set ep = request.endpoint or '' %}
+    <a href="{{ url_for('page_tasks') }}" class="{{ 'on' if ep=='page_tasks' }}">📋 任务列表</a>
+    <a href="{{ url_for('page_monitor') }}" class="{{ 'on' if ep=='page_monitor' }}">📡 运行监控</a>
+    <a href="{{ url_for('page_exceptions') }}" class="{{ 'on' if ep=='page_exceptions' }}">⚠ 异常处理</a>
+    <a href="{{ url_for('page_settings') }}" class="{{ 'on' if ep=='page_settings' }}">⚙ 设置</a>
+  </aside>
+  <main>{% block body %}{% endblock %}</main>
+</div>
+<script>
+async function postForm(url, data){
+  const fd = new FormData();
+  for (const [k,v] of Object.entries(data)) fd.append(k,v);
+  const r = await fetch(url,{method:'POST',body:fd});
+  return r.json();
+}
+function act(url,data,okMsg){
+  postForm(url,data).then(j=>{
+    if(j.ok!==false){alert(okMsg||'操作成功');location.reload();}
+    else{alert('操作失败：'+(j.error||JSON.stringify(j.errors||'')));}
+  });
+}
+</script>
+{% block script %}{% endblock %}
+</body></html>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}已申报查询{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>已申报数据（最近 200 条）</h2>
+  <table>
+    <thead><tr><th>回执号</th><th>业务编号</th><th>录入账号</th><th>提交时间</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.sim_ref }}</td><td>{{ r.ref_no }}</td><td>{{ r.account }}</td><td>{{ r.submitted_at }}</td>
+        <td><a class="btn gray" style="padding:3px 10px" href="{{ url_for('decl_detail', sim_ref=r.sim_ref) }}">详情/回查</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted" style="text-align:center">暂无申报数据</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

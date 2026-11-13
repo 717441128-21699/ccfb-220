@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}登录 · 仿真单一窗口{% endblock %}
+{% block body %}
+<div class="card" style="max-width:430px;margin:40px auto">
+  <h2>企业用户登录</h2>
+  {% if reason == 'timeout' %}<div class="flash">会话已超时，请重新登录后继续，断点数据不会丢失。</div>{% endif %}
+  <form method="post" action="{{ url_for('login') }}">
+    <div style="margin-bottom:14px"><label>用户名</label><input name="username" autofocus required></div>
+    <div style="margin-bottom:14px"><label>密码</label><input name="password" type="password" required></div>
+    <div style="margin-bottom:18px">
+      <label>图形验证码（点击图片刷新）</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input name="captcha" required style="flex:1" maxlength="4" autocomplete="off">
+        <img id="capImg" src="{{ url_for('captcha_png') }}" title="点击刷新"
+             style="height:42px;border:1px solid #b9c4d6;border-radius:6px;cursor:pointer">
+      </div>
+    </div>
+    <button type="submit" class="btn" style="width:100%">登 录</button>
+  </form>
+  <p class="muted" style="margin-top:14px">本系统为本地仿真环境，账号由 RPA 管理后台统一分配。</p>
+</div>
+<script>document.getElementById('capImg').onclick=function(){this.src='{{ url_for('captcha_png') }}?t='+Date.now()};</script>
+{% endblock %}

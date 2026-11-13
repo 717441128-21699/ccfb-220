@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}任务列表{% endblock %}
+{% block body %}
+<h1>任务列表（共 {{ rows|length }} 单）</h1>
+<div class="stats">
+  {% for k,label in [('queued','待录入'),('running','录入中'),('verified','核对通过'),
+                     ('invalid','校验拦截'),('failed','失败待处理'),('mismatch','核对差异')] %}
+  <div class="stat"><b>{{ stats.get(k,0) }}</b><span>{{ label }}</span></div>
+  {% endfor %}
+</div>
+<div class="card">
+  <div style="margin-bottom:12px">
+    筛选：
+    <a class="btn sm {{ 'gray' if q else 'green' }}" href="{{ url_for('page_tasks') }}">全部</a>
+    {% for k in ['queued','running','verified','invalid','failed','mismatch'] %}
+    <a class="btn sm {{ 'green' if q==k else 'gray' }}" href="?status={{ k }}">{{ k }}</a>
+    {% endfor %}
+  </div>
+  <table>
+    <thead><tr>
+      <th>ID</th><th>业务编号</th><th>状态</th><th>机器人</th><th>断点阶段</th>
+      <th>表体进度</th><th>回执号</th><th>核对</th><th>脏数据</th><th>操作</th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.ref_no }}</td>
+      <td><span class="tag {{ r.status }}">{{ r.status }}</span></td>
+      <td>{{ r.assigned_worker or '-' }}</td>
+      <td>{{ r.stage or '-' }}</td>
+      <td>{{ r.item_index or 0 }} 行</td>
+      <td>{{ r.sim_ref or '-' }}</td>
+      <td>{% if r.recon %}<span class="tag {{ 'verified' if r.recon=='match' else 'mismatch' }}">{{ r.recon }}</span>{% else %}-{% endif %}</td>
+      <td>{% if r.defect_type %}<span class="tag invalid">{{ r.defect_type }}</span>{% else %}<span class="muted">干净单</span>{% endif %}</td>
+      <td>
+        <a class="btn sm" href="{{ url_for('page_preview', task_id=r.id) }}">预览</a>
+        {% if r.status in ('failed','mismatch') %}
+        <button class="btn sm green" onclick="act('/api/task/requeue',{task_id:{{ r.id }}})">重新入队</button>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

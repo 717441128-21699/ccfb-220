@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}报关申报录入{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>报关单录入（草稿 #{{ draft_id or '未保存' }} · 表体第 {{ page + 1 }}/{{ total_pages }} 页，每页 {{ page_size }} 行）</h2>
+  <form method="post" action="{{ url_for('save_page') }}">
+    <input type="hidden" name="draft_id" value="{{ draft_id or '' }}">
+    <input type="hidden" name="page" value="{{ page }}">
+    <input type="hidden" name="total_pages" value="{{ total_pages }}">
+
+    <h2 style="margin-top:6px">表头</h2>
+    <div class="grid">
+      <div><label>业务编号 *</label><input name="ref_no" value="{{ header.ref_no or '' }}"></div>
+      <div><label>贸易方式 *</label><input name="trade_mode" value="{{ header.trade_mode or '' }}"></div>
+      <div><label>征免性质</label><input name="levy_type" value="{{ header.levy_type or '' }}"></div>
+      <div><label>合同协议号 *</label><input name="contract_no" value="{{ header.contract_no or '' }}"></div>
+      <div><label>收货人名称 *</label><input name="consignee_name" value="{{ header.consignee_name or '' }}"></div>
+      <div><label>收货人统一信用代码 *</label><input name="consignee_credit_code" value="{{ header.consignee_credit_code or '' }}"></div>
+      <div><label>发货人名称 *</label><input name="consignor_name" value="{{ header.consignor_name or '' }}"></div>
+      <div><label>发货人国别 *</label><input name="consignor_country" value="{{ header.consignor_country or '' }}"></div>
+      <div><label>进口口岸 *</label><input name="import_port" value="{{ header.import_port or '' }}"></div>
+      <div><label>出口口岸 *</label><input name="export_port" value="{{ header.export_port or '' }}"></div>
+      <div><label>币制 *</label><input name="currency" value="{{ header.currency or '' }}"></div>
+      <div><label>总数量</label><input name="total_qty" value="{{ header.total_qty or '' }}"></div>
+      <div><label>总金额</label><input name="total_amount" value="{{ header.total_amount or '' }}"></div>
+      <div><label>运费</label><input name="freight" value="{{ header.freight or '' }}"></div>
+      <div><label>保费</label><input name="insurance" value="{{ header.insurance or '' }}"></div>
+      <div><label>包装种类 *</label><input name="pack_type" value="{{ header.pack_type or '' }}"></div>
+      <div><label>运输方式 *</label><input name="trans_mode" value="{{ header.trans_mode or '' }}"></div>
+      <div><label>申报日期 * (YYYY-MM-DD)</label><input name="decl_date" value="{{ header.decl_date or '' }}"></div>
+    </div>
+
+    <h2 style="margin-top:20px">表体商品明细（分页）</h2>
+    {% set start = page * page_size %}
+    {% set rows = page_size if page < total_pages - 1 else (items|length - start) %}
+    {% set rows = rows if rows > 0 else page_size %}
+    <input type="hidden" name="rows_on_page" value="{{ rows }}">
+    <table>
+      <thead><tr>
+        <th>序号</th><th>商品编码</th><th>商品名称</th><th>规格型号</th><th>数量</th><th>单位</th>
+        <th>法定数量</th><th>币制</th><th>单价</th><th>总价</th><th>原产国</th><th>目的国</th>
+      </tr></thead>
+      <tbody>
+      {% for i in range(rows) %}
+        {% set it = items[start + i] if items|length > start + i else {} %}
+        <tr>
+          {% for f in ['line_no','hs_code','goods_name','spec','qty','unit','legal_qty','currency','unit_price','total_price','origin_country','dest_country'] %}
+          <td><input name="item_{{ f }}_{{ i }}" value="{{ it.get(f, '') if it else '' }}"></td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="pager">
+      {% if page > 0 %}<button type="submit" class="btn gray" name="action" value="prev">上一页</button>{% endif %}
+      {% if page < total_pages - 1 %}<button type="submit" class="btn" name="action" value="next">下一页</button>{% endif %}
+      <button type="submit" class="btn orange" name="action" value="addpage">新增一页表体</button>
+      <button type="submit" class="btn green" name="action" value="next">保存本页</button>
+      <span class="muted">提示：翻页自动保存草稿，掉线重登后可凭草稿继续录入。</span>
+    </div>
+  </form>
+  <form method="post" action="{{ url_for('decl_submit') }}" style="margin-top:8px"
+        onsubmit="return confirm('确认提交申报？提交后不可修改（同业务编号重复提交不会重复申报）。')">
+    <input type="hidden" name="draft_id" value="{{ draft_id or '' }}">
+    <button type="submit" class="btn green" style="width:100%" {% if not draft_id %}disabled{% endif %}>✅ 提交申报</button>
+  </form>
+</div>
+{% endblock %}

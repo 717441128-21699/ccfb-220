@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}运行监控{% endblock %}
+{% block body %}
+<h1>运行监控</h1>
+<div class="card">
+  <h2 style="margin:0 0 12px;font-size:16px">机器人实例（多账号并发）</h2>
+  <table>
+    <thead><tr><th>实例</th><th>账号</th><th>状态</th><th>进程</th><th>心跳</th><th>当前任务</th><th>信息</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for w in workers %}
+    <tr>
+      <td>{{ w.id }}</td><td>{{ w.account }}</td>
+      <td><span class="tag {{ 'verified' if w.status in ('idle','stopped') else 'running' }}">{{ w.status }}</span></td>
+      <td>{% if live.get(w.id) %}<span class="dot g"></span>存活{% else %}<span class="dot r"></span>未运行{% endif %}</td>
+      <td class="muted">{{ w.heartbeat }}</td>
+      <td>{{ w.current_task or '-' }}</td><td>{{ w.info or '-' }}</td>
+      <td>
+        {% if live.get(w.id) %}
+        <button class="btn sm red" onclick="act('/api/worker/stop',{worker_id:'{{ w.id }}'})">停止</button>
+        {% else %}
+        <button class="btn sm green" onclick="act('/api/worker/start',{account:'{{ w.account }}'})">启动</button>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}<tr><td colspan="8" class="muted">还没有机器人实例，到「设置」页查看可用账号并在此启动</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 12px;font-size:16px">故障注入演练（验证自恢复能力）</h2>
+  <p class="muted">在机器人跑单过程中触发，观察其重登续录 / 等待维护 / 不重复申报的表现。</p>
+  <button class="btn orange sm" onclick="act('/api/fault/inject',{kind:'kill_sessions'})">强制全部会话过期</button>
+  <button class="btn orange sm" onclick="act('/api/fault/inject',{kind:'announce'})">弹出维护公告(软)</button>
+  <button class="btn red sm" onclick="act('/api/fault/inject',{kind:'hard_maintenance'})">开启硬维护(503)</button>
+  <button class="btn green sm" onclick="act('/api/fault/inject',{kind:'clear_maintenance'})">结束维护恢复网站</button>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 12px;font-size:16px">正在录入的任务与断点</h2>
+  <table>
+    <thead><tr><th>任务</th><th>业务编号</th><th>机器人</th><th>阶段</th><th>表体进度</th></tr></thead>
+    <tbody>
+    {% for r in running %}
+    <tr><td>{{ r.id }}</td><td>{{ r.ref_no }}</td><td>{{ r.assigned_worker }}</td>
+        <td>{{ r.stage }}</td><td>{{ r.item_index }} 行</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">当前无运行中任务</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 12px;font-size:16px">审计日志（最近 60 条）</h2>
+  <table>
+    <thead><tr><th style="width:170px">时间</th><th style="width:140px">操作者</th><th style="width:160px">动作</th><th>详情</th></tr></thead>
+    <tbody>
+    {% for l in logs %}
+    <tr><td class="logline">{{ l.ts }}</td><td class="logline">{{ l.actor }}</td>
+        <td class="logline">{{ l.action }}</td><td class="logline">{{ l.detail }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

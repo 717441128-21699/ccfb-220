@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}提交校验未通过{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>⚠ 服务端字段联动校验未通过（共 {{ errs|length }} 项）</h2>
+  <table>
+    <thead><tr><th style="width:240px">字段</th><th>错误信息</th></tr></thead>
+    <tbody>
+    {% for e in errs %}
+      <tr><td><span class="tag err">{{ e.field }}</span></td><td>{{ e.message }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p style="margin-top:16px">
+    <a class="btn" href="{{ url_for('decl_new', draft_id=draft_id) }}">返回草稿修改</a>
+  </p>
+</div>
+{% endblock %}

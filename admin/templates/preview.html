@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}单据预览 #{{ t.id }}{% endblock %}
+{% block body %}
+<h1>单据预览 · {{ t.ref_no }} <span class="tag {{ t.status }}">{{ t.status }}</span></h1>
+
+{% if t.validation_errors and t.validation_errors != '[]' %}
+<div class="card errbox">
+  <b>校验拦截原因（解析阶段已拦下，未进入录入队列）：</b>
+  <table style="margin-top:8px">
+    {% for e in t.validation_errors|fromjson %}
+    <tr><td style="width:240px">{{ e.field }}</td><td>{{ e.message }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% if decl %}
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h2 style="margin:0;font-size:16px">统一报关单结构（表头 {{ decl['header']|length }} 字段 / 表体 {{ decl['items']|length }} 行）</h2>
+    <div>
+      {% if t.defect_type %}
+      <button class="btn orange" onclick="reissue({{ t.id }})">采用客户补正件重解析</button>
+      {% endif %}
+      <button class="btn" onclick="toggleEdit()">人工改单</button>
+    </div>
+  </div>
+  <h3 style="font-size:14px;margin:16px 0 8px">表头</h3>
+  <table>
+    <tbody>
+    {% for k,v in decl['header'].items() %}
+    <tr><th style="width:210px">{{ k }}</th><td>{{ v }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <h3 style="font-size:14px;margin:16px 0 8px">表体</h3>
+  <table>
+    <thead><tr>
+      {% for f in ['line_no','hs_code','goods_name','spec','qty','unit','legal_qty','currency','unit_price','total_price','origin_country','dest_country'] %}
+      <th>{{ f }}</th>{% endfor %}
+    </tr></thead>
+    <tbody>
+    {% for it in decl['items'] %}
+    <tr>{% for f in ['line_no','hs_code','goods_name','spec','qty','unit','legal_qty','currency','unit_price','total_price','origin_country','dest_country'] %}
+      <td>{{ it.get(f,'') }}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <div id="editBox" style="display:none;margin-top:18px">
+    <h3 style="font-size:14px">人工编辑（JSON，改完保存并重新校验入队）</h3>
+    <textarea id="declJson" rows="18">{{ {'header':decl['header'],'items':decl['items']}|tojson }}</textarea>
+    <div style="margin-top:10px">
+      <button class="btn green" onclick="saveEdit({{ t.id }})">保存并重新校验入队</button>
+      <button class="btn gray" onclick="toggleEdit()">取消</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if diffs %}
+<div class="card errbox">
+  <b>回查核对差异（{{ diffs|length }} 项）</b>
+  <table style="margin-top:8px">
+    <thead><tr><th>字段</th><th>原单值</th><th>网站端值</th></tr></thead>
+    {% for d in diffs %}
+    <tr><td>{{ d.field }}</td><td>{{ d.original }}</td><td>{{ d.remote }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% elif t.status == 'verified' %}
+<div class="card okbox">✅ 回查逐字段核对通过，差异数：0</div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin:0 0 12px;font-size:16px">截图留痕（{{ shots|length }} 张，按步骤顺序）</h2>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    {% for s in shots %}
+    <div>
+      <a href="/shot/{{ s.id }}" target="_blank"><img class="shot" src="/shot/{{ s.id }}"></a>
+      <div class="muted" style="margin-top:4px">{{ s.step }}</div>
+    </div>
+    {% else %}<span class="muted">暂无截图</span>{% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block script %}
+<script>
+function toggleEdit(){const b=document.getElementById('editBox');b.style.display=b.style.display=='none'?'block':'none';}
+async function saveEdit(tid){
+  let decl;
+  try{decl=JSON.parse(document.getElementById('declJson').value);}
+  catch(e){alert('JSON 格式错误：'+e.message);return;}
+  const j=await postForm('/api/task/edit',{task_id:tid,decl_json:JSON.stringify(decl)});
+  if(j.ok){alert('校验通过，已重新入队');location.reload();}
+  else{alert('仍有校验错误：\n'+j.errors.map(e=>e.field+' '+e.message).join('\n'));}
+}
+async function reissue(tid){
+  const j=await postForm('/api/task/reissue',{task_id:tid});
+  if(j.ok){alert('补正件解析通过，已重新入队');location.reload();}
+  else{alert('补正失败：'+(j.error||JSON.stringify(j.errors)));}
+}
+</script>
+{% endblock %}

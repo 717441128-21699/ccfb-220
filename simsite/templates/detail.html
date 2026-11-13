@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}申报详情 · {{ sim_ref }}{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>申报详情 · 回执号 {{ sim_ref }}（提交于 {{ submitted_at }}）</h2>
+  <h2>表头</h2>
+  <table>
+    <tbody>
+    {% for k, v in d.header.items() %}
+      <tr><th style="width:200px">{{ k }}</th><td>{{ v }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <h2 style="margin-top:18px">表体（{{ d['items']|length }} 行）</h2>
+  <table>
+    <thead><tr>
+      {% for f in ['line_no','hs_code','goods_name','spec','qty','unit','legal_qty','currency','unit_price','total_price','origin_country','dest_country'] %}
+      <th>{{ f }}</th>{% endfor %}
+    </tr></thead>
+    <tbody>
+    {% for it in d['items'] %}
+      <tr>{% for f in ['line_no','hs_code','goods_name','spec','qty','unit','legal_qty','currency','unit_price','total_price','origin_country','dest_country'] %}
+        <td>{{ it.get(f, '') }}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
